@@ -7,7 +7,7 @@ def main():
     #The visible board is the board that the player interacts with when the program is ran.
     board = [[' ' for _ in range(10)] for _ in range(10)]
     visible_board = [['*' for _ in range(10)] for _ in range(10)]
-    num_bombs = 8
+    num_bombs = 10
     game_over = False
     dug_spots = set()
 
