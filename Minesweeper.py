@@ -1,12 +1,8 @@
 from random import randint
 
 def main():
-    #initialize game settings for the game
-
-    #Two boards are created to handle 2 different things. The actual board is used to handle all the behind the scenes game logic of generating a board.
-    #The visible board is the board that the player interacts with when the program is ran.
-    board = [[' ' for _ in range(10)] for _ in range(10)]
-    visible_board = [['*' for _ in range(10)] for _ in range(10)]
+    board = {f'{i};{j}': ' ' for i in range(10) for j in range(10)}
+    visible_board = {f'{i};{j}': '*' for i in range(10) for j in range(10)}
     num_bombs = 10
     game_over = False
     dug_spots = set()
@@ -16,13 +12,14 @@ def main():
         row = randint(0, 9)
         col = randint(0, 9)
 
-        if board[row][col] == "*":
+        if board[f'{row};{col}'] == '*':
             continue
-        board[row][col] = '*'
+        board[f'{row};{col}'] = '*'
         num_bombs -= 1
     
     #check surrounding bombs of each space
-    check_bombs(board)
+    for space in board:
+        check_bombs(board, space)
     
     #game loop
     while not game_over:
@@ -31,7 +28,8 @@ def main():
         #get valid player move, 1 is subtracted from input since the user inputs a value between 1-10 but our board uses 0 indexing
         row = int(input("Choose a row: ")) - 1
         col = int(input("Choose a column: ")) - 1
-        player_move = (row, col)
+        player_move = f'{row};{col}'
+
         if player_move in dug_spots:
             print("\nThat space has already been dug, try again\n")
             continue
@@ -48,160 +46,53 @@ def main():
     if game_over:
         print("You Lost")
     else:
-
         print("You Win")
-    
 
-
-    
-
-    
-
-def print_board(board):
+def print_board(board: dict):
     #formatting for printing the board in a human readable manner
-    print("      1    2    3    4    5    6    7    8    9    10")
-    for i in range(len(board)):
-        print(f"{i+1}---{board[i]}", end='\n')
+    print("\n  1 2 3 4 5 6 7 8 9 10\n--------------------")
+    for i in range(10):
+        row = f"{i+1}-"
+        for j in range(10):
+            row += board[f'{i};{j}'] + "|"
+        print(row)
 
-# WHAT THE FUCK
-def check_bombs(board):
-    #iterate through 2D list so we visit every space
-    for row in range(len(board)):
-        for col in range(len(board[0])):
-            if board[row][col] == '*':
-                continue
-            surrounding_bombs = 0
-            checked_spots = set()
+def get_surrounding_spaces(board: dict, pos: str) -> list[str]:
+    surrounding_spaces = []
+    offsets = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+    pos_coordinates = (int(pos[0]), int(pos[-1]))
 
-            #This code sucks. Essentially, we check to see if a spot is in checked spots, if it's not, then we check if it's a bomb and increment surrounding_bombs
-            #accordingly and add that spot to checked spots. The reasoning behind all the min() and max() functions is that when checking an edge space, if we try
-            #to check the previous or next row/col, we will accidentally index outside the length of the board list
-            if (max(0, row-1), max(0, col-1)) in checked_spots: #topleft
-                pass
-            else:
-                if board[max(0, row-1)][max(0, col-1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((max(0, row-1), max(0, col-1)))
+    for offset in offsets:
+        check_loc = f'{pos_coordinates[0] + offset[0]};{pos_coordinates[1] + offset[1]}'
+        if check_loc in board:
+            surrounding_spaces.append(check_loc)
+    return surrounding_spaces
 
-            if (max(0, row-1), col) in checked_spots: #top middle
-                pass
-            else:
-                if board[max(0, row-1)][col] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((max(0, row-1), col))
-            
-            if (max(0, row-1), min(9, col+1)) in checked_spots: #topright
-                pass
-            else:
-                if board[max(0, row-1)][min(9, col+1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((max(0, row-1), min(9, col+1)))
-            
-            if (row, max(0, col-1)) in checked_spots: #middleleft
-                pass
-            else:
-                if board[row][max(0, col-1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((row, max(0, col-1)))
+def check_bombs(board: dict, pos: str):
+    if board[pos] == '*':
+        return
+    surrounding_spaces = get_surrounding_spaces(board, pos)
+    surrounding_bombs = 0
 
-            if (row, min(9, col+1)) in checked_spots: #middleright, we don't check middle middle because that is the spot we are currently on
-                pass
-            else:
-                if board[row][min(9, col+1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((row, min(9, col+1)))
-            
-            if (min(9, row+1), max(0, col-1)) in checked_spots: #downleft
-                pass
-            else:
-                if board[min(9, row+1)][max(0, col-1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((min(9, row+1), max(0, col-1)))
-            
-            if (min(9, row+1), col) in checked_spots: #down middle
-                pass
-            else:
-                if board[min(9, row+1)][col] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((min(9, row+1), col))
-            
-            if (min(9, row+1), min(9, col+1)) in checked_spots: #down right
-                pass
-            else:
-                if board[min(9, row+1)][min(9, col+1)] == '*':
-                    surrounding_bombs += 1
-                checked_spots.add((min(9, row+1), min(9, col+1)))
+    for space in surrounding_spaces:
+        if board[space] == '*':
+            surrounding_bombs += 1
+    board[pos] = str(surrounding_bombs)
 
-            
-            board[row][col] = str(surrounding_bombs)
-
-
-def dig(visible_board, board, space, dug_spots):
-    #We don't want to dig a spot thats already been dug, otherwise this would exceed the max recursion depth in the dig() function
+def dig(visible_board: dict, board: dict, space: str, dug_spots: set) -> bool:
     if space in dug_spots:
-        pass
-    else:
-        checked_spots = set()
-        dug_spots.add(space)
+        return
+    if board[space] == '*':
+        return True
+    
+    visible_board[space] = board[space]
+    dug_spots.add(space)
+    
+    if board[space] == '0':
+        check_spots = get_surrounding_spaces(board, space)
 
-        #turn user input into usable row, col indexing for our 2d board list
-        row, col = space
-        
-        #game state is handled with this if statement
-        if board[row][col] == '*':
-            return True
-
-        #The space on the visible board is revealed whenever the dig function is called on that space
-        visible_board[row][col] = board[row][col]
-
-        #This part of the code is very similar to the check_bombs() function. If the space the player has chosen has a value of 0, that means that no bombs surround it.
-        #In minesweeper, whenever you dig a spot that is 0 all the surrounding spots are automatically revealed for you. To do this, we first get all the surrounding
-        #spots of the space and add it to the checked_spots set. Then the dig() function must be called on each one of those spots to reveal it and check if it's 0
-        #again so that it continues to reveal each spot until you have an "island" of 0's surrounded by 1's, 2's, etc.
-        if board[row][col] == '0':
-            if (max(0, row-1), max(0, col-1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((max(0, row-1), max(0, col-1)))
-
-            if (max(0, row-1), col) in checked_spots:
-                pass
-            else:
-                checked_spots.add((max(0, row-1), col))
-            
-            if (max(0, row-1), min(9, col+1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((max(0, row-1), min(9, col+1)))
-            
-            if (row, max(0, col-1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((row, max(0, col-1)))
-
-            if (row, min(9, col+1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((row, min(9, col+1)))
-            
-            if (min(9, row+1), max(0, col-1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((min(9, row+1), max(0, col-1)))
-            
-            if (min(9, row+1), col) in checked_spots:
-                pass
-            else:
-                checked_spots.add((min(9, row+1), col))
-            
-            if (min(9, row+1), min(9, col+1)) in checked_spots:
-                pass
-            else:
-                checked_spots.add((min(9, row+1), min(9, col+1)))
-
-            #this is the recursive part of the dig() function
-            for spot in checked_spots:
-                dig(visible_board, board, spot, dug_spots)
-
+        for spot in check_spots:
+            dig(visible_board, board, spot, dug_spots)
+    
 
 main()
