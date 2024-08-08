@@ -73,7 +73,7 @@ def fill_board(board):
         undo_move(board, space)
          
 #solves a sudoku board in place. display and font parameters for visual shenanigans, not important to algorithm
-def solve(board: list[list[int]], display, font) -> list[list[int]]:
+def solve(board: list[list[int]], display, font) -> bool:
     #get the next empty square. If there isn't one, that means the sudoku is solved
     space = get_empty_square(board)
     if not space:
